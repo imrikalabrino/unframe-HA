@@ -31,6 +31,40 @@ app.get('/auth/gitlab/callback', async (req, res) => {
     }
 });
 
+app.get('/repositories', async (req, res) => {
+    const token = req.query.token;
+    const limit = req.query.limit || 10;
+    const page = req.query.page || 1;
+
+    try {
+        const response = await axios.get('https://gitlab.com/api/v4/projects', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            params: {
+                visibility: 'public',
+                per_page: limit,
+                page: page,
+                order_by: 'last_activity_at', //TODO: Add support for different filtering
+                simple: true,
+            },
+        });
+
+        const repositories = response.data.map(repo => ({
+            id: repo.id,
+            name: repo.name,
+            author: repo.namespace ? repo.namespace.name : 'Unknown',
+            last_activity_at: repo.last_activity_at,
+            description: repo.description, //TODO: Make sure its easy to add more data fields
+        }));
+
+        res.json(repositories);
+    } catch (error) {
+        console.error('Error fetching repositories:', error);
+        res.status(500).send('Failed to fetch repositories');
+    }
+});
+
 app.get('/', (req, res) => {
     res.send('GitLab OAuth2 Integration Server');
 });

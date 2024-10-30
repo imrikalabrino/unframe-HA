@@ -1,15 +1,15 @@
 <template>
   <div id="app">
-    <RepositoryList />
+    <RepositoriesView />
   </div>
 </template>
 
 <script>
-import RepositoryList from './components/RepositoryList.vue';
+import RepositoriesView from './views/RepositoriesView.vue';
 
 export default {
   components: {
-    RepositoryList,
+    RepositoriesView,
   },
 };
 </script>

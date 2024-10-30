@@ -1,9 +1,23 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
+const cors = require('cors')
+const session = require('express-session');
 require('dotenv').config();
 
 const port = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
 
 app.get('/auth/gitlab', (req, res) => {
     const gitlabAuthUrl = `https://gitlab.com/oauth/authorize?client_id=${process.env.GITLAB_CLIENT_ID}&redirect_uri=${process.env.GITLAB_REDIRECT_URI}&response_type=code&scope=read_api`;
@@ -24,7 +38,9 @@ app.get('/auth/gitlab/callback', async (req, res) => {
 
         const { access_token } = tokenResponse.data;
 
-        res.json({ access_token });
+        req.session.access_token = access_token;
+
+        res.redirect('/repositories');
     } catch (error) {
         console.error('Error exchanging code for token:', error);
         res.status(500).send('Authentication failed');
@@ -32,7 +48,12 @@ app.get('/auth/gitlab/callback', async (req, res) => {
 });
 
 app.get('/repositories', async (req, res) => {
-    const token = req.query.token;
+    const token = req.session.access_token;
+
+    if (!token) {
+        return res.status(401).send('Unauthorized: No access token available');
+    }
+
     const limit = req.query.limit || 10;
     const page = req.query.page || 1;
 
@@ -55,7 +76,7 @@ app.get('/repositories', async (req, res) => {
             name: repo.name,
             author: repo.namespace ? repo.namespace.name : 'Unknown',
             last_activity_at: repo.last_activity_at,
-            description: repo.description, //TODO: Make sure its easy to add more data fields
+            description: repo.description, //TODO: Make sure it's easy to add more data fields
         }));
 
         res.json(repositories);

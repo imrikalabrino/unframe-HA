@@ -56,6 +56,7 @@ app.get('/repositories', async (req, res) => {
 
     const limit = req.query.limit || 10;
     const page = req.query.page || 1;
+    const search = req.query.search || '';
 
     try {
         const response = await axios.get('https://gitlab.com/api/v4/projects', {
@@ -66,6 +67,7 @@ app.get('/repositories', async (req, res) => {
                 visibility: 'public',
                 per_page: limit,
                 page: page,
+                search: search,
                 order_by: 'last_activity_at', //TODO: Add support for different filtering
                 simple: true,
             },
@@ -85,6 +87,7 @@ app.get('/repositories', async (req, res) => {
         res.status(500).send('Failed to fetch repositories');
     }
 });
+
 
 app.get('/', (req, res) => {
     res.send('GitLab OAuth2 Integration Server');

@@ -18,21 +18,21 @@ exports.getAllRepositories = async (req, res) => {
 };
 
 exports.getRepositoryById = async (req, res) => {
+    const { id } = req.params;
+    const { lastActivityAt } = req.query;
     const token = req.session.access_token;
 
+    console.log(id, lastActivityAt, token)
+
     if (!token) {
-        return res.status(401).send('Unauthorized: No access token available');
+        return res.status(401).json({ error: 'Unauthorized: No access token available' });
     }
 
     try {
-        const { id } = req.params;
-        const repository = await repositoryService.getRepositoryById(id);
-        if (!repository) {
-            return res.status(404).json({ error: 'Repository not found' });
-        }
-        res.status(200).json(repository);
+        const repository = await repositoryService.getRepositoryById(id, lastActivityAt, token);
+        res.json(repository);
     } catch (error) {
-        console.error(`Error fetching repository ${req.params.id}:`, error);
-        res.status(500).json({ error: 'Failed to load repository' });
+        console.error('Error fetching repository by ID:', error);
+        res.status(500).json({ error: 'Failed to fetch repository' });
     }
 };

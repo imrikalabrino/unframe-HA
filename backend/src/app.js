@@ -3,9 +3,9 @@ const session = require('express-session');
 const cors = require('cors');
 require('dotenv').config();
 
-const db = require('./config/db');
+const { pool } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
-const repoRoutes = require('./routes/repositoriesRoutes');
+const repoRoutes = require('./routes/repositoryRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const app = express();
 const logger = require('./middleware/logger');
@@ -30,11 +30,11 @@ app.use('/ask-ai', aiRoutes);
 
 app.get('/test-db', async (req, res) => {
     try {
-        const result = await db.query('SELECT NOW()');
-        res.json({ connected: true, time: result.rows[0] });
+        await pool.query('SELECT NOW()');
+        res.json({ connected: true });
     } catch (error) {
         console.error('Database connection error:', error);
-        res.status(500).json({ connected: false, error: error.message });
+        res.json({ connected: false, error: error.message });
     }
 });
 

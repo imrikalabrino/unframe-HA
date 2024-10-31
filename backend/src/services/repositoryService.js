@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { pool } = require('../config/db');
+const cacheUtil = require('../utils/cacheUtil');
 
 const repositorySchema = {
     name: 'string',
@@ -60,6 +61,7 @@ exports.updateRepository = async (id, fields) => {
         `;
 
         const result = await pool.query(query, values);
+        cacheUtil.clear(id); // Clear cache to force re-fetch on next get
         return result.rows[0];
     } catch (error) {
         console.error(`Error updating repository with ID ${id}:`, error);
@@ -71,6 +73,7 @@ exports.updateRepository = async (id, fields) => {
 exports.deleteRepository = async (id) => {
     try {
         await pool.query('DELETE FROM repositories WHERE id = $1', [id]);
+        cacheUtil.clear(id); // Clear cache after delete
     } catch (error) {
         console.error(`Error deleting repository with ID ${id}:`, error);
         throw new Error('Failed to delete repository');
@@ -81,6 +84,7 @@ exports.deleteRepository = async (id) => {
 exports.deleteCommit = async (repoId, commitId) => {
     try {
         await pool.query('DELETE FROM commits WHERE id = $1 AND repository_id = $2', [commitId, repoId]);
+        cacheUtil.clear(repoId); // Clear cache after commit deletion
     } catch (error) {
         console.error(`Error deleting commit with ID ${commitId} for repository ${repoId}:`, error);
         throw new Error('Failed to delete commit');
@@ -91,6 +95,7 @@ exports.deleteCommit = async (repoId, commitId) => {
 exports.deleteBranch = async (repoId, branchId) => {
     try {
         await pool.query('DELETE FROM branches WHERE id = $1 AND repository_id = $2', [branchId, repoId]);
+        cacheUtil.clear(repoId); // Clear cache after branch deletion
     } catch (error) {
         console.error(`Error deleting branch with ID ${branchId} for repository ${repoId}:`, error);
         throw new Error('Failed to delete branch');
@@ -133,25 +138,27 @@ const syncCommitsAndBranches = async (repoId, token) => {
 // Main function to get repository by ID with minimal GitLab API calls
 exports.getRepositoryById = async (repoId, lastActivityAt, token) => {
     try {
+        let cachedRepo = cacheUtil.get(repoId);
+
+        if (cachedRepo && new Date(cachedRepo.last_activity_at) >= new Date(lastActivityAt)) {
+            return cachedRepo;
+        }
+
         // Check if the repository exists in the database
         const result = await pool.query('SELECT * FROM repositories WHERE id = $1', [repoId]);
         const dbRepo = result.rows[0];
 
-        if (dbRepo) {
-            // Compare `last_activity_at` timestamps
-            if (new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt)) {
-                // Database version is up-to-date, return it with commits and branches
-                const commits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
-                const branches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
-                return {
-                    ...dbRepo,
-                    commits: commits.rows,
-                    branches: branches.rows
-                };
-            } else {
-                // GitLab version is newer, fetch it and update the database
-                return await fetchAndUpdateRepo(repoId, token);
-            }
+        if (dbRepo && new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt)) {
+            const commits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
+            const branches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
+
+            cachedRepo = {
+                ...dbRepo,
+                commits: commits.rows,
+                branches: branches.rows
+            };
+            cacheUtil.set(repoId, cachedRepo); // Cache the latest data
+            return cachedRepo;
         } else {
             // Repository does not exist in the database, fetch from GitLab, store, and return it
             return await fetchAndUpdateRepo(repoId, token);
@@ -197,7 +204,7 @@ const fetchAndUpdateRepo = async (repoId, token) => {
     const updatedCommits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
     const updatedBranches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
 
-    return {
+    const updatedRepo = {
         id: repoData.id,
         name: repoData.name,
         description: repoData.description,
@@ -207,4 +214,7 @@ const fetchAndUpdateRepo = async (repoId, token) => {
         commits: updatedCommits.rows,
         branches: updatedBranches.rows
     };
+
+    cacheUtil.set(repoId, updatedRepo); // Update cache with new data
+    return updatedRepo;
 };

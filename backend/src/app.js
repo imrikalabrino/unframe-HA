@@ -3,9 +3,13 @@ const axios = require('axios');
 const app = express();
 const cors = require('cors')
 const session = require('express-session');
+const OpenAI = require('openai');
 require('dotenv').config();
 
 const port = process.env.PORT || 3000;
+const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+app.use(express.json());
 
 app.use(cors({
     origin: 'http://localhost:5173',
@@ -18,6 +22,33 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false }
 }));
+
+app.post('/ask-ai', async (req, res) => {
+    const { question } = req.body;
+
+    if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+    }
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: "system", content: "You are a helpful assistant." },
+                { role: "user", content: question },
+            ],
+            max_tokens: 200,
+            temperature: 0.7,
+        });
+
+        const aiResponse = completion.choices[0].message.content;
+        res.json({ response: aiResponse });
+    } catch (error) {
+        console.error('Error calling OpenAI API:', error);
+        res.status(500).send('Failed to get response from AI');
+    }
+});
+
 
 app.get('/auth/gitlab', (req, res) => {
     const gitlabAuthUrl = `https://gitlab.com/oauth/authorize?client_id=${process.env.GITLAB_CLIENT_ID}&redirect_uri=${process.env.GITLAB_REDIRECT_URI}&response_type=code&scope=read_api`;

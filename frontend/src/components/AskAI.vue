@@ -46,6 +46,51 @@ export default {
 };
 </script>
 
-<style scoped>
-/* Add styles as needed */
+<style scoped lang="scss">
+h2 {
+  font-size: 1.8rem;
+  color: #333;
+}
+
+input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background-color: #218838;
+  }
+}
+
+.loading,
+.error {
+  color: #ff6b6b;
+  margin-top: 0.5rem;
+}
+
+.ai-response {
+  margin-top: 1rem;
+
+  h3 {
+    color: #333;
+  }
+
+  p {
+    color: #666;
+    font-size: 1rem;
+  }
+}
 </style>

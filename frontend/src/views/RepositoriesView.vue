@@ -74,5 +74,16 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.loading,
+.error {
+  color: #ff6b6b;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
 </style>

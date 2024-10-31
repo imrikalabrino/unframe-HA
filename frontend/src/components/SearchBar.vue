@@ -15,8 +15,20 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .search-bar {
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+
+  input[type="text"] {
+    padding: 0.5rem;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
 }
+
 </style>

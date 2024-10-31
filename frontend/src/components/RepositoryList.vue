@@ -20,5 +20,12 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+ul {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 </style>

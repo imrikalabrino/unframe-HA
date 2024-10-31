@@ -18,5 +18,22 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+li {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fff;
+
+  h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #007acc;
+  }
+
+  p {
+    margin: 0.5rem 0;
+    color: #666;
+  }
+}
 </style>

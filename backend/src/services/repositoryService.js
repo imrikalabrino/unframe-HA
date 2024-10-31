@@ -1,6 +1,12 @@
 const axios = require('axios');
 const { pool } = require('../config/db');
 
+const repositorySchema = {
+    name: 'string',
+    description: 'string',
+    visibility: 'string'
+};
+
 exports.getRepositories = async (token, limit = 10, page = 1, search = '') => {
     try {
         const response = await axios.get('https://gitlab.com/api/v4/projects', {
@@ -24,6 +30,70 @@ exports.getRepositories = async (token, limit = 10, page = 1, search = '') => {
     } catch (error) {
         console.error('Error fetching repositories from GitLab:', error);
         throw new Error('Failed to fetch repositories');
+    }
+};
+
+exports.updateRepository = async (id, fields) => {
+    try {
+        const keys = Object.keys(fields);
+        const values = Object.values(fields);
+
+        // Validate fields against the schema
+        keys.forEach((key, index) => {
+            if (!(key in repositorySchema)) {
+                throw new Error(`Invalid field: ${key}`);
+            }
+            if (typeof values[index] !== repositorySchema[key]) {
+                throw new Error(`Invalid type for field ${key}: expected ${repositorySchema[key]}, got ${typeof values[index]}`);
+            }
+        });
+
+        // Construct SQL query
+        const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+        values.push(id);
+
+        const query = `
+            UPDATE repositories
+            SET ${setClause}
+            WHERE id = $${values.length}
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        console.error(`Error updating repository with ID ${id}:`, error);
+        throw new Error('Failed to update repository');
+    }
+};
+
+// Delete repository with its commits and branches
+exports.deleteRepository = async (id) => {
+    try {
+        await pool.query('DELETE FROM repositories WHERE id = $1', [id]);
+    } catch (error) {
+        console.error(`Error deleting repository with ID ${id}:`, error);
+        throw new Error('Failed to delete repository');
+    }
+};
+
+// Delete specific commit
+exports.deleteCommit = async (repoId, commitId) => {
+    try {
+        await pool.query('DELETE FROM commits WHERE id = $1 AND repository_id = $2', [commitId, repoId]);
+    } catch (error) {
+        console.error(`Error deleting commit with ID ${commitId} for repository ${repoId}:`, error);
+        throw new Error('Failed to delete commit');
+    }
+};
+
+// Delete specific branch
+exports.deleteBranch = async (repoId, branchId) => {
+    try {
+        await pool.query('DELETE FROM branches WHERE id = $1 AND repository_id = $2', [branchId, repoId]);
+    } catch (error) {
+        console.error(`Error deleting branch with ID ${branchId} for repository ${repoId}:`, error);
+        throw new Error('Failed to delete branch');
     }
 };
 

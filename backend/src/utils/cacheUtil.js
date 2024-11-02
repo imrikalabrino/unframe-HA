@@ -12,6 +12,7 @@ const get = (key) => {
     const cachedData = cache[key];
     if (cachedData) {
         if (Date.now() - cachedData.timestamp < EXPIRATION_TIME) {
+            cache[key].timestamp = Date.now();
             return cachedData.value;
         } else {
             delete cache[key];

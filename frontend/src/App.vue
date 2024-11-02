@@ -1,24 +1,43 @@
 <template>
   <div id="app">
-    <RepositoriesView />
+    <router-view />
   </div>
 </template>
 
 <script>
-import RepositoriesView from './views/RepositoriesView.vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 
 export default {
-  components: {
-    RepositoriesView,
+  setup() {
+    const router = useRouter();
+
+    const checkGitLabToken = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/check-token', { withCredentials: true });
+        if (response.data.valid) {
+          router.push('/repositories');
+        } else {
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Error checking GitLab token:', error);
+        router.push('/login');
+      }
+    };
+
+    checkGitLabToken();
   },
 };
 </script>
 
 <style scoped lang="scss">
 #app {
-  padding: 2rem;
+  padding: 1.5rem;
   font-family: Arial, sans-serif;
   color: #333;
   background-color: #f9f9f9;
+  border-radius: 2rem;
+  height: 80vh;
 }
 </style>

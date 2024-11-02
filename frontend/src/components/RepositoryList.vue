@@ -1,6 +1,11 @@
 <template>
   <ul v-if="repositories && repositories.length">
-    <RepositoryItem v-for="repo in repositories" :key="repo.id" :repository="repo" />
+    <RepositoryItem
+        v-for="repo in repositories"
+        :key="repo.id"
+        :repository="repo"
+        @select="selectRepository"
+    />
   </ul>
 </template>
 
@@ -15,6 +20,11 @@ export default {
     repositories: {
       type: Array,
       required: true,
+    },
+  },
+  methods: {
+    selectRepository(repoId) {
+      this.$emit('selectRepository', repoId);
     },
   },
 };

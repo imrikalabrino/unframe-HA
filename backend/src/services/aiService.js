@@ -22,18 +22,29 @@ exports.getAIResponse = async (question, repoId) => {
             cacheUtil.set(repoId, repoData);
         }
 
+        // Validate and format repository details
+        const repo = repoData.repository || {};
+        const commitsText = repoData.commits
+            ? repoData.commits.map(commit => `- ${commit.message} (Author: ${commit.author}, Date: ${commit.date})`).join('\n')
+            : "No commits available";
+
+        const branchesText = repoData.branches
+            ? repoData.branches.map(branch => branch.name).join(', ')
+            : "No branches available";
+
+        // Construct the prompt with repository details
         const prompt = `
-            Repository Name: ${repoData.repository.name}
-            Description: ${repoData.repository.description}
-            Author: ${repoData.repository.author}
-            Last Activity Date: ${repoData.repository.last_activity_at}
-            Visibility: ${repoData.repository.visibility}
+            Repository Name: ${repo.name || 'N/A'}
+            Description: ${repo.description || 'N/A'}
+            Author: ${repo.author || 'N/A'}
+            Last Activity Date: ${repo.last_activity_at || 'N/A'}
+            Visibility: ${repo.visibility || 'N/A'}
             
             Commits:
-            ${repoData.repository.commits.join('\n')}
+            ${commitsText}
             
             Branches:
-            ${repoData.repository.branches.join(', ')}
+            ${branchesText}
             
             Question: ${question}
             

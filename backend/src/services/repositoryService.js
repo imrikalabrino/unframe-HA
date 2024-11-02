@@ -27,6 +27,7 @@ exports.getRepositories = async (token, limit = 10, page = 1, search = '') => {
             author: repo.namespace ? repo.namespace.name : 'Unknown',
             last_activity_at: repo.last_activity_at,
             description: repo.description,
+            avatar_url: repo.avatar_url
         }));
     } catch (error) {
         console.error('Error fetching repositories from GitLab:', error);

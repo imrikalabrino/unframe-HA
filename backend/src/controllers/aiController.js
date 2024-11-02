@@ -1,13 +1,13 @@
 const aiService = require('../services/aiService');
 
 exports.askAI = async (req, res) => {
-    const { question } = req.body;
-    if (!question) {
-        return res.status(400).json({ error: 'Question is required' });
+    const { question, repoId } = req.body;
+    if (!question || !repoId) {
+        return res.status(400).json({ error: 'Question and repository ID are required' });
     }
 
     try {
-        const response = await aiService.getAIResponse(question);
+        const response = await aiService.getAIResponse(question, repoId);
         res.json({ response });
     } catch (error) {
         console.error('Error fetching AI response:', error);

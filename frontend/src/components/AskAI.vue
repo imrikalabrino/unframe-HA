@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2>Ask the AI a question about repositories</h2>
+    <h2>Ask the AI a question about this repository</h2>
     <input v-model="question" placeholder="Ask a question..." />
     <button @click="askAI">Submit</button>
 
@@ -17,6 +17,12 @@
 import axios from 'axios';
 
 export default {
+  props: {
+    repoId: {
+      type: Number,
+      required: true,
+    },
+  },
   data() {
     return {
       question: '',
@@ -33,7 +39,8 @@ export default {
 
       try {
         const response = await axios.post('http://localhost:3000/ask-ai', {
-          question: this.question
+          question: this.question,
+          repoId: this.repoId,
         });
         this.aiResponse = response.data.response;
       } catch (err) {
@@ -41,8 +48,8 @@ export default {
       } finally {
         this.loading = false;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

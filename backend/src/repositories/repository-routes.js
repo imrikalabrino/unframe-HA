@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const repositoryController = require('../controllers/repositoryController');
+const repositoryController = require('./repository-controller');
 
 router.get('/', repositoryController.getAllRepositories);
 router.get('/:id', repositoryController.getRepositoryById);

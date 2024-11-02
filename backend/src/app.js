@@ -4,12 +4,12 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { pool } = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
-const repoRoutes = require('./routes/repositoryRoutes');
-const aiRoutes = require('./routes/aiRoutes');
+const authRoutes = require('./authorization/auth-routes');
+const repoRoutes = require('./repositories/repository-routes');
+const aiRoutes = require('./AI/ai-routes');
 const app = express();
 const logger = require('./middleware/logger');
-const errorHandler = require('./middleware/errorHandler');
+const errorHandler = require('./middleware/error-handler');
 
 app.use(logger);
 app.use(express.json());

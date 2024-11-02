@@ -29,11 +29,3 @@ CREATE TABLE IF NOT EXISTS branches (
     repository_id VARCHAR REFERENCES repositories(id) ON DELETE CASCADE, -- Link to repository
     created_at TIMESTAMPTZ DEFAULT NOW()  -- Timestamp for record creation
 );
-
-
--- Create branch_commits Table
-CREATE TABLE IF NOT EXISTS branch_commits (
-    branch_id VARCHAR REFERENCES branches(id) ON DELETE CASCADE, -- Branch reference
-    commit_id VARCHAR REFERENCES commits(id) ON DELETE CASCADE,  -- Commit reference
-    PRIMARY KEY (branch_id, commit_id)                           -- Composite primary key
-);

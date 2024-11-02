@@ -1,29 +1,41 @@
 const OpenAI = require('openai');
 const { pool } = require('../config/db');
-const cacheUtil = require('../utils/cacheUtil');
+const cacheUtil = require('../utils/cache-util');
 require('dotenv').config();
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
+/**
+ * Generates an AI response based on a question about a specific repository.
+ *
+ * @param {string} question - The question asked about the repository.
+ * @param {number} repoId - The ID of the repository in question.
+ * @returns {Promise<string>} - The AI-generated response based on repository details.
+ */
 exports.getAIResponse = async (question, repoId) => {
     try {
         let repoData = cacheUtil.get(repoId);
+
+        // If repoData is not in cache, fetch it from the database
         if (!repoData) {
             const repoResult = await pool.query('SELECT * FROM repositories WHERE id = $1', [repoId]);
             const commitsResult = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
             const branchesResult = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
 
             repoData = {
-                repository: repoResult.rows[0],
+                id: repoResult.rows[0].id,
+                name: repoResult.rows[0].name,
+                description: repoResult.rows[0].description,
+                author: repoResult.rows[0].author,
+                last_activity_at: repoResult.rows[0].last_activity_at,
+                visibility: repoResult.rows[0].visibility,
                 commits: commitsResult.rows,
                 branches: branchesResult.rows,
             };
-
-            cacheUtil.set(repoId, repoData);
         }
 
         // Validate and format repository details
-        const repo = repoData.repository || {};
+        const repo = repoData || {};
         const commitsText = repoData.commits
             ? repoData.commits.map(commit => `- ${commit.message} (Author: ${commit.author}, Date: ${commit.date})`).join('\n')
             : "No commits available";

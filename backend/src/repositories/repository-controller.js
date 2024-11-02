@@ -1,4 +1,4 @@
-const repositoryService = require('../services/repositoryService');
+const repositoryService = require('./repository-service');
 
 exports.getAllRepositories = async (req, res) => {
     const token = req.session.access_token;
@@ -21,8 +21,6 @@ exports.getRepositoryById = async (req, res) => {
     const { id } = req.params;
     const { lastActivityAt } = req.query;
     const token = req.session.access_token;
-
-    console.log(id, lastActivityAt, token)
 
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized: No access token available' });

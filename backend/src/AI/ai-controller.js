@@ -1,4 +1,4 @@
-const aiService = require('../services/aiService');
+const aiService = require('./ai-service');
 
 exports.askAI = async (req, res) => {
     const { question, repoId } = req.body;

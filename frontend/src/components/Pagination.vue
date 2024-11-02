@@ -16,7 +16,7 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .pagination {
   display: flex;
   justify-content: center;
@@ -33,7 +33,7 @@ export default {
     transition: background 0.3s ease;
 
     &:disabled {
-      background-color: #ddd;
+      background-color: #4d4d4d;
       cursor: not-allowed;
     }
 

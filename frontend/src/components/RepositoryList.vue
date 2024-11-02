@@ -1,36 +1,35 @@
 <template>
   <ul v-if="repositories && repositories.length">
     <RepositoryItem
-        v-for="repo in repositories"
-        :key="repo.id"
-        :repository="repo"
-        @select="selectRepository"
+      v-for="repo in repositories"
+      :key="repo.id"
+      :repository="repo"
+      @select="selectRepository"
     />
   </ul>
 </template>
 
 <script>
+import { useRepositoryStore } from '../stores/repository-store.js';
 import RepositoryItem from './RepositoryItem.vue';
 
 export default {
   components: {
     RepositoryItem,
   },
-  props: {
-    repositories: {
-      type: Array,
-      required: true,
-    },
-  },
-  methods: {
-    selectRepository(repoId) {
-      this.$emit('selectRepository', repoId);
-    },
-  },
+  setup() {
+    const repositoryStore = useRepositoryStore();
+    const selectRepository = (repoId) => repositoryStore.selectRepository(repoId);
+
+    return {
+      repositories: repositoryStore.filteredRepositories,
+      selectRepository,
+    };
+  }
 };
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 ul {
   list-style-type: none;
   padding: 0;

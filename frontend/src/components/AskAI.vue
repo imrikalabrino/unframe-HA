@@ -1,14 +1,15 @@
 <template>
-  <div>
-    <h2>Ask the AI a question about this repository</h2>
-    <input v-model="question" placeholder="Ask a question..." />
-    <button @click="askAI">Submit</button>
-
-    <div v-if="loading">Loading...</div>
-    <div v-if="error">{{ error }}</div>
-    <div v-if="aiResponse">
-      <h3>AI Response:</h3>
-      <p>{{ aiResponse }}</p>
+  <div class="ai-container">
+    <div class="left-container">
+      <div class="response-box">
+        <h2 v-if="!aiResponse && !loading">Ask the AI a question about this repository</h2>
+        <p v-if="loading">Thinking...</p>
+        <p v-else-if="aiResponse">{{ aiResponse }}</p>
+      </div>
+      <input v-model="question" placeholder="Ask a question..." />
+    </div>
+    <div class="right-container">
+      <button class="send-button" @click="askAI">></button>
     </div>
   </div>
 </template>
@@ -53,51 +54,67 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
-h2 {
-  font-size: 1.8rem;
-  color: #333;
+<style scoped>
+.ai-container {
+  display: flex;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 1rem;
+  width: 100%;
+  max-width: 600px;
+  color: #fff;
+}
+
+.left-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.response-box {
+  background-color: #333;
+  border-radius: 8px;
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  font-size: 1rem;
+  text-align: center;
 }
 
 input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
+  background-color: #222;
+  border: 1px solid #555;
   border-radius: 4px;
+  padding: 0.5rem;
+  color: #fff;
   font-size: 1rem;
 }
 
-button {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
+input::placeholder {
+  color: #777;
+}
+
+.right-container {
+  display: flex;
+  align-items: flex-end;
+  padding-left: 1rem;
+}
+
+.send-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   background-color: #28a745;
-  color: #fff;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
-  transition: background 0.3s ease;
-
-  &:hover {
-    background-color: #218838;
-  }
+  transition: background-color 0.3s ease;
 }
 
-.loading,
-.error {
-  color: #ff6b6b;
-  margin-top: 0.5rem;
-}
-
-.ai-response {
-  margin-top: 1rem;
-
-  h3 {
-    color: #333;
-  }
-
-  p {
-    color: #666;
-    font-size: 1rem;
-  }
+.send-button:hover {
+  background-color: #218838;
 }
 </style>

@@ -1,21 +1,36 @@
 <template>
   <div class="search-bar">
-    <input type="text" :value="modelValue" placeholder="Search by repository name" @input="$emit('update:modelValue', $event.target.value)" />
+    <input
+      type="text"
+      v-model="repositoryStore.searchQuery"
+      placeholder="Search by repository name"
+    />
   </div>
 </template>
 
 <script>
+import { useRepositoryStore } from '../stores/repository-store.js';
+import { watch } from 'vue';
+
 export default {
-  props: {
-    modelValue: {
-      type: String,
-      default: ''
-    }
-  }
+  setup() {
+    const repositoryStore = useRepositoryStore();
+
+    watch(
+      () => repositoryStore.searchQuery,
+      (newQuery) => {
+        repositoryStore.updateSearchQuery(newQuery);
+      }
+    );
+
+    return {
+      repositoryStore,
+    };
+  },
 };
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .search-bar {
   margin-bottom: 1rem;
   display: flex;
@@ -30,5 +45,4 @@ export default {
     border-radius: 4px;
   }
 }
-
 </style>

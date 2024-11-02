@@ -35,8 +35,8 @@ export default {
 #app {
   padding: 1.5rem;
   font-family: Arial, sans-serif;
-  color: #333;
-  background-color: #f9f9f9;
+  color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 2rem;
   height: 80vh;
 }

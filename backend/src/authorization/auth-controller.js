@@ -8,7 +8,10 @@ const authService = require('./auth-service');
  * @param {object} res - The response object used to redirect to GitLab's OAuth authorization URL.
  */
 exports.authenticateGitlab = (req, res) => {
-    const { redirectUrl } = req.query;
+    let { redirectUrl } = req.query;
+    if (req.query === undefined) {
+        redirectUrl = `http://localhost:${process.env.PORT}/repositories`
+    }
     const gitlabAuthUrl = `https://gitlab.com/oauth/authorize?client_id=${process.env.GITLAB_CLIENT_ID}&redirect_uri=${process.env.GITLAB_REDIRECT_URI}&response_type=code&scope=read_api&state=${encodeURIComponent(redirectUrl)}`;
     res.redirect(gitlabAuthUrl);
 };

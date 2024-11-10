@@ -61,8 +61,15 @@ export const useRepositoryStore = defineStore('repository', {
             this.detailLoading = true;
             this.detailError = null;
             this.selectedRepositoryId = id;
+
+            const repository = this.repositories.find(repo => repo.id === id);
+            const lastActivityAt = repository ? repository.last_activity_at : null;
+
             try {
-                this.selectedRepository = await fetchRepositoryById(id);
+                // This is where the issue was. During some point of the development, the last activity
+                // date was removed and no longer sent to the server, which made any fetch fail the up-to-date
+                // validation and thus re-fetched from the API.
+                this.selectedRepository = await fetchRepositoryById(id, lastActivityAt);
             } catch (err) {
                 this.detailError = 'Failed to load repository details';
             } finally {
@@ -80,6 +87,11 @@ export const useRepositoryStore = defineStore('repository', {
             try {
                 const updatedRepo = await updateRepository(this.selectedRepositoryId, updatedFields);
                 this.selectedRepository = { ...this.selectedRepository, ...updatedRepo };
+
+                const repoIndex = this.repositories.findIndex(repo => repo.id === this.selectedRepositoryId);
+                if (repoIndex !== -1) {
+                    this.repositories[repoIndex] = { ...this.repositories[repoIndex], ...updatedFields };
+                }
             } catch (err) {
                 this.detailError = 'Failed to update repository';
             } finally {

@@ -190,16 +190,21 @@ const syncCommitsAndBranches = async (repoId, token) => {
  */
 exports.getRepositoryById = async (repoId, lastActivityAt, token) => {
     try {
+        // We first try the caching mechanism for the sought repository
         let cachedRepo = cacheUtil.get(repoId);
 
-        if (cachedRepo && new Date(cachedRepo.last_activity_at) >= new Date(lastActivityAt)) {
+        // If its found, it can be returned. Unless a last activity date is provided, in that case it validates
+        // the date to determine if a request to the db or api is needed.
+        if (cachedRepo && (!lastActivityAt || new Date(cachedRepo.last_activity_at) >= new Date(lastActivityAt))) {
             return cachedRepo;
         }
 
+        // If the cached version is not viable, pull from the db
         const result = await pool.query('SELECT * FROM repositories WHERE id = $1', [repoId]);
         const dbRepo = result.rows[0];
 
-        if (dbRepo && new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt)) {
+        // The same date validation occurs on the data from the db, if its present
+        if (dbRepo && (!lastActivityAt || new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt))) {
             const commits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
             const branches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
 
@@ -208,11 +213,16 @@ exports.getRepositoryById = async (repoId, lastActivityAt, token) => {
                 commits: commits.rows,
                 branches: branches.rows
             };
+
+            // Update the cache
             cacheUtil.set(repoId, cachedRepo);
             return cachedRepo;
-        } else {
-            return await fetchAndUpdateRepo(repoId, token);
         }
+
+        // If the repo is not found in the caching system or the db or they are both invalidated (old data
+        // compared to the api) we get the repo from gitlabs api and update the db and cache.
+        return await fetchAndUpdateRepo(repoId, token);
+
     } catch (error) {
         console.error(`Error fetching or syncing repository with ID ${repoId}:`, error);
         throw new Error('Failed to fetch or sync repository');

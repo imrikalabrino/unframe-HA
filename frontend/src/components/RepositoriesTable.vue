@@ -10,10 +10,11 @@
       />
     </div>
 
+    <div v-if="listLoading" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-20 mt-20">
+      <i class="fas fa-spinner fa-spin fa-3x text-white"></i>
+    </div>
+
     <div class="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 m-2 relative">
-      <div v-if="listLoading" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-20">
-        <i class="fas fa-spinner fa-spin fa-3x text-white"></i>
-      </div>
 
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10">

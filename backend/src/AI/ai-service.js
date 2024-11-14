@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
 import { pool } from '../config/db.js';
 import cacheUtil from '../utils/cache-util.js';
-import logger from '../middleware/logger.js';
 
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
+const openai = new OpenAI();
 
 /**
  * Generates an AI response based on a question about a specific repository.
@@ -13,7 +12,9 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
  * @returns {Promise<string>} - The AI-generated response based on repository details.
  * @throws {Error} - Throws an error if AI response generation fails.
  */
-async function getAIResponse(question, repoId) {
+async function getAIResponse(question, repoId, apiKey) {
+  openai.apiKey = apiKey;
+
   try {
     let repoData = cacheUtil.get(repoId);
 
@@ -102,7 +103,7 @@ async function getAIResponse(question, repoId) {
 
     return completion.choices[0].message.content;
   } catch (error) {
-    logger.error(`Error in getAIResponse: ${error.message}`, { error });
+    console.error(`Error in getAIResponse: ${error.message}`, { error });
     throw new Error('Failed to get response from AI');
   }
 }
@@ -122,7 +123,7 @@ async function getChatHistory(repoId) {
     );
     return result.rows;
   } catch (error) {
-    logger.error(`Error in getChatHistory: ${error.message}`, { error });
+    console.error(`Error in getChatHistory: ${error.message}`, { error });
     throw new Error('Failed to get chat history');
   }
 }
@@ -143,7 +144,7 @@ async function storeConversation(repoId, message, role) {
       [repoId, message, role]
     );
   } catch (error) {
-    logger.error(`Error in storeConversation: ${error.message}`, { error });
+    console.error(`Error in storeConversation: ${error.message}`, { error });
     throw new Error('Failed to store conversation');
   }
 }

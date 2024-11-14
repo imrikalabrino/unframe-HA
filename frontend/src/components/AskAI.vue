@@ -21,6 +21,8 @@
                 'px-4 py-2 rounded-lg max-w-md break-words',
                 msg.role === 'user'
                   ? 'bg-blue-100 dark:bg-blue-700 text-gray-800 dark:text-gray-100'
+                  : msg.role === 'error'
+                  ? 'bg-red-100 dark:bg-red-700 text-gray-800 dark:text-gray-100'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100',
               ]"
             >
@@ -36,7 +38,15 @@
     </div>
 
     <!-- Input Box and Send Button -->
-    <div class="flex items-center mt-4 border-t pt-4 border-gray-300 dark:border-gray-600">
+    <div v-if="!hasApiKey" class="mt-4">
+      <p class="text-red-500">
+        No API key found. Please go to
+        <router-link to="/settings" class="underline text-blue-600 dark:text-blue-400">Settings</router-link>
+        and enter your API key.
+      </p>
+    </div>
+
+    <div v-else class="flex items-center mt-4 border-t pt-4 border-gray-300 dark:border-gray-600">
       <input
         ref="inputRef"
         v-model="question"
@@ -56,19 +66,24 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, nextTick } from 'vue';
+import { ref, watch, onMounted, nextTick, computed } from 'vue';
 import { useRepositoryStore } from '../stores/repository-store.js';
+import { useAiStore } from '../stores/ai-store.js';
 import axios from 'axios';
 
 export default {
   setup() {
     const repositoryStore = useRepositoryStore();
+    const aiStore = useAiStore();
+
     const question = ref('');
     const conversationHistory = ref([]);
     const loading = ref(false);
     const error = ref(null);
     const inputRef = ref(null);
     const chatContainer = ref(null);
+
+    const hasApiKey = computed(() => !!aiStore.apiKey);
 
     const scrollToBottom = () => {
       const container = chatContainer.value;
@@ -78,13 +93,23 @@ export default {
     };
 
     const askAI = async () => {
+      if (!hasApiKey.value) {
+        conversationHistory.value.push({
+          role: 'error',
+          message: 'API key is missing. Please set it in Settings.',
+        });
+        return;
+      }
+
       if (!question.value || !repositoryStore.selectedRepositoryId) {
-        error.value = 'Missing required information to send the request.';
+        conversationHistory.value.push({
+          role: 'error',
+          message: 'Missing required information to send the request.',
+        });
         return;
       }
 
       loading.value = true;
-      error.value = null;
 
       try {
         conversationHistory.value.push({ role: 'user', message: question.value });
@@ -96,26 +121,45 @@ export default {
         await nextTick();
         scrollToBottom();
 
-        const response = await axios.post('http://localhost:3000/ask-ai', {
-          question:
-            conversationHistory.value[conversationHistory.value.length - 1].message,
-          repoId: repositoryStore.selectedRepositoryId,
-        });
+        const response = await axios.post(
+          'http://localhost:3000/ask-ai',
+          {
+            question: conversationHistory.value[conversationHistory.value.length - 1].message,
+            repoId: repositoryStore.selectedRepositoryId,
+          },
+          {
+            headers: {
+              apiKey: aiStore.apiKey,
+            },
+          }
+        );
 
         conversationHistory.value.push({
           role: 'assistant',
           message: response.data.response,
         });
 
-        await nextTick();
-        scrollToBottom();
-      } catch (err) {
-        error.value = 'Failed to get response from AI';
-        console.error(err);
-      } finally {
-        loading.value = false;
-      }
-    };
+    await nextTick();
+    scrollToBottom();
+  } catch (err) {
+    console.error(err);
+
+    // Extract the error message
+    const errorMessage = err.response?.data?.error || err.message || 'An unknown error occurred.';
+
+    // Push the error message to the conversation history
+    conversationHistory.value.push({
+      role: 'error',
+      message: `Error: ${errorMessage.message}`,
+    });
+
+    await nextTick();
+    scrollToBottom();
+  } finally {
+    loading.value = false;
+  }
+};
+
 
     const fetchConversationHistory = async () => {
       if (!repositoryStore.selectedRepositoryId) return;
@@ -172,6 +216,7 @@ export default {
       askAI,
       inputRef,
       chatContainer,
+      hasApiKey,
     };
   },
 };

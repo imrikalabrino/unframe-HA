@@ -99,12 +99,33 @@ async function updateRepository(id, fields) {
  * @throws {Error} - Throws an error if the repository deletion fails.
  */
 async function deleteRepository(id) {
+  const client = await pool.connect();
+
   try {
-    await pool.query('DELETE FROM repositories WHERE id = $1', [id]);
+    await client.query('BEGIN');
+
+    await client.query('DELETE FROM conversations WHERE repository_id = $1', [id]);
+
+    await client.query('DELETE FROM commits WHERE repository_id = $1', [id]);
+
+    await client.query('DELETE FROM branches WHERE repository_id = $1', [id]);
+
+    const deleteRepoResult = await client.query('DELETE FROM repositories WHERE id = $1 RETURNING *', [id]);
+
+    if (deleteRepoResult.rowCount === 0) {
+      throw new Error(`Repository with ID ${id} does not exist.`);
+    }
+
     cacheUtil.clear(id);
+
+    await client.query('COMMIT');
   } catch (error) {
-    error.message = `Failed to delete repository with ID ${id}`;
+    await client.query('ROLLBACK');
+
+    error.message = `Failed to delete repository with ID ${id}: ${error.message}`;
     throw error;
+  } finally {
+    client.release();
   }
 }
 

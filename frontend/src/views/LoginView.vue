@@ -1,35 +1,80 @@
 <template>
-  <div class="login-view flex flex-col items-center justify-center h-screen bg-gray-100">
+  <div class="login-view flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Logo -->
-<!--    <img src="@/assets/logo.png" alt="Site Logo" class="mb-8 w-32 h-32" />-->
+    <!-- <img src="@/assets/logo.png" alt="Site Logo" class="mb-8 w-32 h-32" /> -->
 
     <div class="flex gap-4 mb-10">
-      <button @click="openForm('login')" disabled class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 bg-gray-500">
+      <button
+        @click="openForm('login')"
+        disabled
+        class="text-white px-6 py-2 rounded-lg bg-gray-500 dark:bg-gray-700"
+      >
         Login
       </button>
-      <button @click="openForm('register')" disabled class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 bg-gray-500">
+      <button
+        @click="openForm('register')"
+        disabled
+        class="text-white px-6 py-2 rounded-lg bg-gray-500 dark:bg-gray-700"
+      >
         Register
       </button>
-      <button @click="loginWithGitlab" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-gray-800">
+      <button
+        @click="loginWithGitlab"
+        class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+      >
         Login with GitLab
       </button>
     </div>
 
     <!-- Register Form -->
     <form v-if="showForm === 'register'" @submit.prevent="register" class="flex flex-col">
-      <input type="text" v-model="username" placeholder="Username" required class="mb-2" />
-      <input type="password" v-model="password" placeholder="Password" required class="mb-2" />
-      <input type="file" @change="handleFileUpload" class="mb-4" />
-      <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+      <input
+        type="text"
+        v-model="username"
+        placeholder="Username"
+        required
+        class="mb-2 p-2 rounded bg-white dark:bg-gray-800 dark:text-white"
+      />
+      <input
+        type="password"
+        v-model="password"
+        placeholder="Password"
+        required
+        class="mb-2 p-2 rounded bg-white dark:bg-gray-800 dark:text-white"
+      />
+      <input
+        type="file"
+        @change="handleFileUpload"
+        class="mb-4 p-2 rounded bg-white dark:bg-gray-800 dark:text-white"
+      />
+      <button
+        type="submit"
+        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+      >
         Register
       </button>
     </form>
 
     <!-- Login Form -->
     <form v-if="showForm === 'login'" @submit.prevent="login" class="flex flex-col">
-      <input type="text" v-model="username" placeholder="Username" required class="mb-2" />
-      <input type="password" v-model="password" placeholder="Password" required class="mb-4" />
-      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+      <input
+        type="text"
+        v-model="username"
+        placeholder="Username"
+        required
+        class="mb-2 p-2 rounded bg-white dark:bg-gray-800 dark:text-white"
+      />
+      <input
+        type="password"
+        v-model="password"
+        placeholder="Password"
+        required
+        class="mb-4 p-2 rounded bg-white dark:bg-gray-800 dark:text-white"
+      />
+      <button
+        type="submit"
+        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+      >
         Login
       </button>
     </form>
@@ -62,8 +107,6 @@ export default {
       if (this.imageFile) {
         formData.append('image', this.imageFile);
       }
-
-      console.log(formData,  this.username, this.password, this.imageFile);
 
       try {
         const response = await axios.post('http://localhost:3000/auth/register', formData);

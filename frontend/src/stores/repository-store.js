@@ -84,26 +84,29 @@ export const useRepositoryStore = defineStore('repository', {
      * Updates repository details (e.g., name, description, visibility).
      * @param {Object} updatedFields - Fields to update.
      */
-    async updateRepositoryDetails(updatedFields) {
-      this.detailLoading = true;
-      this.detailError = null;
-      try {
-        const updatedRepo = await updateRepository(this.selectedRepositoryId, updatedFields);
-        this.selectedRepository = { ...this.selectedRepository, ...updatedRepo };
+async updateRepositoryDetails(updatedFields) {
+  this.detailLoading = true;
+  this.detailError = null;
+  try {
+    const updatedRepo = await updateRepository(this.selectedRepositoryId, updatedFields);
 
-        const repoIndex = this.repositories.findIndex(
-          (repo) => repo.id === this.selectedRepositoryId
-        );
-        if (repoIndex !== -1) {
-          this.repositories[repoIndex] = { ...this.repositories[repoIndex], ...updatedFields };
-        }
-      } catch (err) {
-        this.detailError = 'Failed to update repository';
-        console.error(err);
-      } finally {
-        this.detailLoading = false;
-      }
-    },
+    console.log(123, updatedRepo)
+
+    this.selectedRepository = { ...this.selectedRepository, ...updatedRepo };
+
+    const repo = this.repositories.find(repo => repo.id === parseInt(this.selectedRepositoryId));
+    console.log(456, repo)
+    if (repo) {
+      Object.assign(repo, updatedRepo);
+    }
+  } catch (err) {
+    this.detailError = 'Failed to update repository';
+    console.error(err);
+  } finally {
+    this.detailLoading = false;
+  }
+},
+
 
     /**
      * Deletes a repository by ID and removes it from the state.

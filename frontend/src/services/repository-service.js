@@ -15,11 +15,11 @@ async function handleUnauthorized(error) {
         withCredentials: true,
       });
       if (!tokenResponse.data.valid) {
-        await router.push('/login'); // Redirect if token is invalid
+        await router.push('/'); // Redirect if token is invalid
       }
     } catch (tokenError) {
       console.error('Error checking token validity:', tokenError);
-      await router.push('/login'); // Redirect if token check fails
+      await router.push('/'); // Redirect if token check fails
     }
   } else {
     throw error;

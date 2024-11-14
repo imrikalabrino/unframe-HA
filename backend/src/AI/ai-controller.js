@@ -16,14 +16,14 @@ export async function askAIHandler(req, res, next) {
     }
 
     try {
-        const response = await aiService.getAIResponse(question, repoId);
+        const response = await aiService.getAIResponse(question, repoId, req.apiKey);
 
         await aiService.storeConversation(repoId, question, 'user');
         await aiService.storeConversation(repoId, response, 'assistant');
 
         res.json({ response });
     } catch (error) {
-        logger.error(`Error in askAIHandler: ${error.message}`, { error });
+        console.error(`Error in askAIHandler: ${error.message}`, { error });
         next(error);
     }
 }
@@ -46,7 +46,7 @@ export async function getChatHistoryHandler(req, res, next) {
     const history = await aiService.getChatHistory(repoId);
     res.json({ history });
   } catch (error) {
-    logger.error(`Error in getChatHistoryHandler: ${error.message}`, { error });
+      console.error(`Error in getChatHistoryHandler: ${error.message}`, { error });
     next(error);
   }
 }

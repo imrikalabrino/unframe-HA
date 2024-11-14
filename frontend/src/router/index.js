@@ -4,6 +4,7 @@ import RepositoryDetails from '../components/RepositoryDetails.vue';
 import LoginView from '../views/LoginView.vue';
 import RepositoryDetailsView from "../views/RepositoryDetailsView.vue";
 import RepositoriesView from "../views/RepositoriesView.vue";
+import SettingsView from "../views/SettingsView.vue";
 
 const routes = [
   {
@@ -34,7 +35,7 @@ const routes = [
       {
         path: '',
         name: 'settings',
-        component: RepositoryDetails, // Placeholder for settings page
+        component: SettingsView,
       },
     ],
   },

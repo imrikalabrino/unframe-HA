@@ -65,6 +65,12 @@ const toggleTheme = () => {
 
 onMounted(() => {
   setActiveMenu(route.name || 'repositories');
+
+  if (isDark.value) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 });
 
 watch(route, (newRoute) => {

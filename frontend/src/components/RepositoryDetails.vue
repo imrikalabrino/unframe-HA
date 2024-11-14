@@ -2,9 +2,6 @@
   <div v-if="repositoryStore.detailLoading" class="p-4">
     <p class="text-gray-700 dark:text-gray-200">Loading repository details...</p>
   </div>
-  <div v-else-if="repositoryStore.detailError" class="p-4">
-    <p class="text-red-600 dark:text-red-400">{{ repositoryStore.detailError }}</p>
-  </div>
   <div v-else-if="repository">
     <div class="h-full flex flex-col overflow-hidden">
       <div class="flex items-center justify-between flex-none p-4">
@@ -139,7 +136,7 @@
             </button>
           </div>
           <div
-            class="border rounded-md p-2 max-h-60 overflow-y-auto bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+            class="border rounded-md p-2 max-h-60 overflow-y-auto bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
           >
             <div
               v-for="(branch, index) in repository.branches"

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import router from '../router';
+import { triggerToast } from '../App.vue';
 
 const BASE_URL = 'http://localhost:3000/repositories';
 
@@ -15,15 +16,24 @@ async function handleUnauthorized(error) {
         withCredentials: true,
       });
       if (!tokenResponse.data.valid) {
-        await router.push('/'); // Redirect if token is invalid
+        await router.push('/');
+        triggerToast({
+          message: 'Session expired. Please log in again.',
+          type: 'error',
+          persistent: true,
+        });
       }
     } catch (tokenError) {
       console.error('Error checking token validity:', tokenError);
-      await router.push('/'); // Redirect if token check fails
+      await router.push('/');
+      triggerToast({
+        message: 'Error verifying session. Please log in again.',
+        type: 'error',
+        persistent: true,
+      });
     }
-  } else {
-    throw error;
   }
+  return false;
 }
 
 /**
@@ -43,6 +53,10 @@ export async function fetchRepositories(page = 1, limit = 10, searchQuery = '') 
   } catch (error) {
     console.error('Error fetching repositories:', error);
     await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to fetch repositories. Please try again later.',
+      type: 'error',
+    });
     throw error;
   }
 }
@@ -54,16 +68,21 @@ export async function fetchRepositories(page = 1, limit = 10, searchQuery = '') 
  * @returns {Promise<Object>} - The data containing the repository details.
  */
 export async function fetchRepositoryById(id, lastActivityAt) {
-    try {
-        const response = await axios.get(`${BASE_URL}/${id}`, {
-            params: { lastActivityAt },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching repository with ID ${id}:`, error);
-        await handleUnauthorized(error);
-    }
+  try {
+    const response = await axios.get(`${BASE_URL}/${id}`, {
+      params: { lastActivityAt },
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching repository with ID ${id}:`, error);
+    await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to fetch repository details. Please try again later.',
+      type: 'error',
+    });
+    throw error;
+  }
 }
 
 /**
@@ -73,15 +92,24 @@ export async function fetchRepositoryById(id, lastActivityAt) {
  * @returns {Promise<Object>} - The data containing updated repository information.
  */
 export async function updateRepository(id, updatedFields) {
-    try {
-        const response = await axios.patch(`${BASE_URL}/${id}`, updatedFields, {
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        console.error(`Error updating repository with ID ${id}:`, error);
-        await handleUnauthorized(error);
-    }
+  try {
+    const response = await axios.patch(`${BASE_URL}/${id}`, updatedFields, {
+      withCredentials: true,
+    });
+    triggerToast({
+      message: 'Repository updated successfully!',
+      type: 'success',
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating repository with ID ${id}:`, error);
+    await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to update repository. Please try again later.',
+      type: 'error',
+    });
+    throw error;
+  }
 }
 
 /**
@@ -89,12 +117,21 @@ export async function updateRepository(id, updatedFields) {
  * @param {number} id - The ID of the repository to delete.
  */
 export async function deleteRepository(id) {
-    try {
-        await axios.delete(`${BASE_URL}/${id}`, { withCredentials: true });
-    } catch (error) {
-        console.error(`Error deleting repository with ID ${id}:`, error);
-        await handleUnauthorized(error);
-    }
+  try {
+    await axios.delete(`${BASE_URL}/${id}`, { withCredentials: true });
+    triggerToast({
+      message: 'Repository deleted successfully!',
+      type: 'success',
+    });
+  } catch (error) {
+    console.error(`Error deleting repository with ID ${id}:`, error);
+    await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to delete repository. Please try again later.',
+      type: 'error',
+    });
+    throw error;
+  }
 }
 
 /**
@@ -103,12 +140,21 @@ export async function deleteRepository(id) {
  * @param {number} commitId - The ID of the commit to delete.
  */
 export async function deleteCommit(repoId, commitId) {
-    try {
-        await axios.delete(`${BASE_URL}/${repoId}/commits/${commitId}`, { withCredentials: true });
-    } catch (error) {
-        console.error(`Error deleting commit with ID ${commitId} for repository ${repoId}:`, error);
-        await handleUnauthorized(error);
-    }
+  try {
+    await axios.delete(`${BASE_URL}/${repoId}/commits/${commitId}`, { withCredentials: true });
+    triggerToast({
+      message: 'Commit deleted successfully!',
+      type: 'success',
+    });
+  } catch (error) {
+    console.error(`Error deleting commit with ID ${commitId}:`, error);
+    await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to delete commit. Please try again later.',
+      type: 'error',
+    });
+    throw error;
+  }
 }
 
 /**
@@ -117,10 +163,19 @@ export async function deleteCommit(repoId, commitId) {
  * @param {number} branchId - The ID of the branch to delete.
  */
 export async function deleteBranch(repoId, branchId) {
-    try {
-        await axios.delete(`${BASE_URL}/${repoId}/branches/${branchId}`, { withCredentials: true });
-    } catch (error) {
-        console.error(`Error deleting branch with ID ${branchId} for repository ${repoId}:`, error);
-        await handleUnauthorized(error);
-    }
+  try {
+    await axios.delete(`${BASE_URL}/${repoId}/branches/${branchId}`, { withCredentials: true });
+    triggerToast({
+      message: 'Branch deleted successfully!',
+      type: 'success',
+    });
+  } catch (error) {
+    console.error(`Error deleting branch with ID ${branchId}:`, error);
+    await handleUnauthorized(error);
+    triggerToast({
+      message: 'Failed to delete branch. Please try again later.',
+      type: 'error',
+    });
+    throw error;
+  }
 }

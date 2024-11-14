@@ -15,37 +15,31 @@
     >
       Save
     </button>
-
-    <Toast v-if="showToast" message="API Key saved successfully!" />
   </div>
 </template>
 
 <script>
 import { ref } from 'vue';
 import { useAiStore } from '../stores/ai-store';
-import Toast from '../components/Toast.vue';
+import { triggerToast } from '../App.vue';
 
 export default {
-  components: { Toast },
   setup() {
     const aiStore = useAiStore();
     const apiKey = ref(aiStore.apiKey);
-    const showToast = ref(false);
 
     const saveKey = () => {
       aiStore.saveApiKey(apiKey.value);
 
-      showToast.value = true;
-
-      setTimeout(() => {
-        showToast.value = false;
-      }, 3000);
+      triggerToast({
+        message: 'API Key saved successfully!',
+        type: 'success',
+      });
     };
 
     return {
       apiKey,
       saveKey,
-      showToast,
     };
   },
 };

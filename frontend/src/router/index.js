@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '../layout/MainLayout.vue';
-import RepositoryDetails from '../components/RepositoryDetails.vue';
 import LoginView from '../views/LoginView.vue';
 import RepositoryDetailsView from "../views/RepositoryDetailsView.vue";
 import RepositoriesView from "../views/RepositoriesView.vue";
 import SettingsView from "../views/SettingsView.vue";
+import DatabaseView from "../views/DatabaseView.vue";
 
 const routes = [
   {
@@ -46,7 +46,7 @@ const routes = [
       {
         path: '',
         name: 'database',
-        component: RepositoryDetails, // Placeholder for database page
+        component: DatabaseView, // Placeholder for database page
       },
     ],
   },

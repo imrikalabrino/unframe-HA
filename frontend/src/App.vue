@@ -1,35 +1,46 @@
 <template>
   <div id="app">
     <router-view />
+    <Toast
+      v-if="toast.visible"
+      :message="toast.message"
+      :type="toast.type"
+      :persistent="toast.persistent"
+    />
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-import { useRouter } from 'vue-router';
+import { reactive } from 'vue';
+import Toast from './components/Toast.vue';
+
+export const toastState = reactive({
+  visible: false,
+  message: '',
+  type: 'success',
+  persistent: false,
+});
+
+export const triggerToast = ({ message, type = 'success', persistent = false }) => {
+  toastState.message = message;
+  toastState.type = type;
+  toastState.persistent = persistent;
+  toastState.visible = true;
+
+  if (!persistent) {
+    setTimeout(() => {
+      toastState.visible = false;
+    }, 3000);
+  }
+};
 
 export default {
+  components: { Toast },
   setup() {
-    const router = useRouter();
-
-    // const checkGitLabToken = async () => {
-    //   try {
-    //     const response = await axios.get('http://localhost:3000/auth/check-token', { withCredentials: true });
-    //     if (response.data.valid) {
-    //       router.push('/repositories');
-    //     } else {
-    //       router.push('/login');
-    //     }
-    //   } catch (error) {
-    //     console.error('Error checking GitLab token:', error);
-    //     router.push('/login');
-    //   }
-    // };
-    //
-    // checkGitLabToken();
+    return { toast: toastState };
   },
 };
 </script>
 
-<style scoped lang="scss">
+<style>
 </style>

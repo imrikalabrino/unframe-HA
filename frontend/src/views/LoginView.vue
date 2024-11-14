@@ -1,7 +1,10 @@
 <template>
   <div class="login-view flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Logo -->
-    <!-- <img src="@/assets/logo.png" alt="Site Logo" class="mb-8 w-32 h-32" /> -->
+    <div class="p-6 flex items-center mb-10">
+      <i class="fas fa-cube text-3xl"></i>
+      <span class="ml-2 text-xl font-bold">unframe</span>
+    </div>
 
     <div class="flex gap-4 mb-10">
       <button
@@ -9,14 +12,14 @@
         disabled
         class="text-white px-6 py-2 rounded-lg bg-gray-500 dark:bg-gray-700"
       >
-        Login
+        Login - disabled
       </button>
       <button
         @click="openForm('register')"
         disabled
         class="text-white px-6 py-2 rounded-lg bg-gray-500 dark:bg-gray-700"
       >
-        Register
+        Register - disabled
       </button>
       <button
         @click="loginWithGitlab"

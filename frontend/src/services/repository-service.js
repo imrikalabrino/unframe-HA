@@ -9,19 +9,21 @@ const BASE_URL = 'http://localhost:3000/repositories';
  * @param {Error} error - The error object received from an Axios request.
  */
 async function handleUnauthorized(error) {
-    if (error.response && error.response.status === 401) {
-        try {
-            const tokenResponse = await axios.get('http://localhost:3000/auth/check-token', { withCredentials: true });
-            if (!tokenResponse.data.valid) {
-                await router.push('/login'); // Redirect if token is invalid
-            }
-        } catch (tokenError) {
-            console.error("Error checking token validity:", tokenError);
-            await router.push('/login'); // Redirect if token check fails
-        }
-    } else {
-        throw error; // Rethrow if error is not unauthorized
+  if (error.response && error.response.status === 401) {
+    try {
+      const tokenResponse = await axios.get('http://localhost:3000/auth/check-token', {
+        withCredentials: true,
+      });
+      if (!tokenResponse.data.valid) {
+        await router.push('/login'); // Redirect if token is invalid
+      }
+    } catch (tokenError) {
+      console.error('Error checking token validity:', tokenError);
+      await router.push('/login'); // Redirect if token check fails
     }
+  } else {
+    throw error;
+  }
 }
 
 /**
@@ -32,16 +34,17 @@ async function handleUnauthorized(error) {
  * @returns {Promise<Object>} - The data containing repositories list.
  */
 export async function fetchRepositories(page = 1, limit = 10, searchQuery = '') {
-    try {
-        const response = await axios.get(BASE_URL, {
-            params: { limit, page, search: searchQuery },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching repositories:", error);
-        await handleUnauthorized(error); // Handle unauthorized errors
-    }
+  try {
+    const response = await axios.get(BASE_URL, {
+      params: { limit, page, search: searchQuery },
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching repositories:', error);
+    await handleUnauthorized(error);
+    throw error;
+  }
 }
 
 /**

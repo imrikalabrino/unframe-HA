@@ -1,304 +1,282 @@
 <template>
-  <div v-if="repositoryStore.detailLoading">
-    <p>Loading repository details...</p>
+  <div v-if="repositoryStore.detailLoading" class="p-4">
+    <p class="text-gray-700 dark:text-gray-200">Loading repository details...</p>
   </div>
-  <div v-else-if="repositoryStore.detailError">
-    <p>{{ repositoryStore.detailError }}</p>
+  <div v-else-if="repositoryStore.detailError" class="p-4">
+    <p class="text-red-600 dark:text-red-400">{{ repositoryStore.detailError }}</p>
   </div>
   <div v-else-if="repository">
-    <div class="ai-container">
-      <AskAI :repoId="repositoryStore.selectedRepositoryId" />
-    </div>
+    <div class="h-full flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between flex-none p-4">
+        <div>
+          <img
+            :src="repository.avatar_url || defaultAvatar"
+            alt="Repository Image"
+            class="w-20 h-20 rounded-full object-cover"
+          />
+        </div>
+        <div class="relative">
+          <button @click="toggleMenu" class="text-gray-600 dark:text-gray-300 focus:outline-none">
+            <i class="fas fa-ellipsis-vertical h-6 w-6 text-xl"></i>
+          </button>
 
-    <div class="repository-details">
-      <div class="details-row">
-        <div class="details-label"><strong>Name:</strong></div>
-        <div class="details-value">
-          <span v-if="!isEditing">{{ repository.name }}</span>
-          <input v-else v-model="updatedFields.name" :class="{ 'input-error': nameError }" />
-          <span v-if="nameError" class="error-msg">Name is required.</span>
+          <div
+            v-if="showMenu"
+            class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-10"
+          >
+            <ul>
+              <li>
+                <button
+                  @click="enterEditMode"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
+                >
+                  Edit
+                </button>
+              </li>
+              <li>
+                <button
+                  @click="confirmDelete"
+                  class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  Delete
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-      <div class="details-row">
-        <div class="details-label"><strong>Description:</strong></div>
-        <div class="details-value">
-          <span v-if="!isEditing">{{ repository.description || '—' }}</span>
-          <textarea v-else v-model="updatedFields.description" />
-        </div>
-      </div>
-      <div class="details-row">
-        <div class="details-label"><strong>Author:</strong></div>
-        <div class="details-value">{{ repository.author }}</div>
-      </div>
-      <div class="details-row">
-        <div class="details-label"><strong>Last Updated:</strong></div>
-        <div class="details-value">{{ repository.last_activity_at }}</div>
-      </div>
-      <div class="details-row">
-        <div class="details-label"><strong>Visibility:</strong></div>
-        <div class="details-value">
-          <span v-if="!isEditing">{{ repository.visibility }}</span>
-          <select v-else v-model="updatedFields.visibility">
+
+      <div class="flex-1 overflow-y-auto p-4">
+        <div v-if="isEditing" class="mb-4">
+          <input
+            v-model="editableName"
+            placeholder="Repository name"
+            class="text-2xl font-bold mb-2 w-full border rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+          />
+          <p class="text-lg mb-1 text-gray-700 dark:text-gray-200">
+            Author: {{ repository.author }}
+          </p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            Last updated: {{ repository.last_activity_at }}
+          </p>
+          <select
+            v-model="editableVisibility"
+            class="text-md mb-4 w-full border rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+          >
             <option value="public">Public</option>
             <option value="private">Private</option>
           </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="button-group">
-      <button class="edit-btn" v-if="!isEditing" @click="startEditing">Edit</button>
-      <div v-else>
-        <button class="save-btn" @click="saveChanges">Save</button>
-        <button class="cancel-btn" @click="cancelEditing">Cancel</button>
-      </div>
-    </div>
-
-    <div class="lists-container">
-      <div class="list-section">
-        <h3>Branches</h3>
-        <div class="scrollable-container">
-          <div
-            v-for="(branch, index) in repository.branches"
-            :key="branch.id"
-            class="list-item"
+          <textarea
+            v-model="editableDescription"
+            placeholder="Description"
+            class="text-md mb-6 w-full border rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+          ></textarea>
+          <button
+            @click="saveChanges"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2"
           >
-            <span class="list-text">{{ branch.name }}</span>
-            <button @click="repositoryStore.deleteBranch(branch.id)" class="delete-button">Delete</button>
-            <div v-if="index < repository.branches.length - 1" class="divider"></div>
+            Save
+          </button>
+          <button
+            @click="cancelEdit"
+            class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-700 text-black dark:text-white px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+        <div v-else>
+          <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">{{ repository.name }}</h2>
+          <p class="text-lg mb-1 text-gray-700 dark:text-gray-200">
+            Author: {{ repository.author }}
+          </p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            Last updated: {{ repository.last_activity_at }}
+          </p>
+          <p class="text-md mb-4 text-gray-700 dark:text-gray-200">
+            Visibility: {{ repository.visibility }}
+          </p>
+          <p class="text-md mb-6 text-gray-700 dark:text-gray-200">{{ repository.description }}</p>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Commits</h3>
+            <button
+              @click="toggleDeleteModeCommits"
+              class="text-sm text-blue-500 dark:text-blue-400 focus:outline-none"
+            >
+              {{ isDeleteModeCommits ? 'Exit Delete Mode' : 'Delete Mode' }}
+            </button>
+          </div>
+          <div
+            class="border rounded-md p-2 max-h-60 overflow-y-auto bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+          >
+            <div
+              v-for="(commit, index) in repository.commits"
+              :key="commit.id"
+              class="flex justify-between items-center border-b pb-2 mb-2 last:border-none last:pb-0 last:mb-0 border-gray-300 dark:border-gray-600"
+            >
+              <p class="text-gray-800 dark:text-gray-200">{{ commit.message }}</p>
+              <button
+                v-if="isDeleteModeCommits"
+                @click="deleteCommit(commit.id)"
+                class="text-red-600 dark:text-red-400 hover:underline focus:outline-none"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Branches</h3>
+            <button
+              @click="toggleDeleteModeBranches"
+              class="text-sm text-blue-500 dark:text-blue-400 focus:outline-none"
+            >
+              {{ isDeleteModeBranches ? 'Exit Delete Mode' : 'Delete Mode' }}
+            </button>
+          </div>
+          <div
+            class="border rounded-md p-2 max-h-60 overflow-y-auto bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+          >
+            <div
+              v-for="(branch, index) in repository.branches"
+              :key="branch.id"
+              class="flex justify-between items-center border-b pb-2 mb-2 last:border-none last:pb-0 last:mb-0 border-gray-200 dark:border-gray-600"
+            >
+              <p class="text-gray-800 dark:text-gray-200">{{ branch.name }}</p>
+              <button
+                v-if="isDeleteModeBranches"
+                @click="deleteBranch(branch.id)"
+                class="text-red-600 dark:text-red-400 hover:underline focus:outline-none"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      <div class="list-section">
-        <h3>Commits</h3>
-        <div class="scrollable-container">
-          <div
-            v-for="(commit, index) in repository.commits"
-            :key="commit.id"
-            class="list-item"
-          >
-            <span class="list-text">{{ commit.message }}</span>
-            <button @click="repositoryStore.deleteCommit(commit.id)" class="delete-button">Delete</button>
-            <div v-if="index < repository.commits.length - 1" class="divider"></div>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <button class="delete-btn" @click="repositoryStore.deleteRepository">Delete Repository</button>
   </div>
-  <div v-else>
-    <p>Select a repository to view its details.</p>
+  <div v-else class="p-4">
+    <p class="text-gray-700 dark:text-gray-200">Select a repository to view its details.</p>
   </div>
 </template>
 
 <script>
 import { useRepositoryStore } from '../stores/repository-store.js';
-import { computed, ref, watch } from 'vue';
-import AskAI from '../components/AskAI.vue';
+import { computed, onMounted, watch, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import defaultAvatar from '../assets/default_repo_icon.png';
 
 export default {
-  components: {
-    AskAI,
+  computed: {
+    defaultAvatar() {
+      return defaultAvatar;
+    },
   },
   setup() {
     const repositoryStore = useRepositoryStore();
-    const isEditing = ref(false);
-    const updatedFields = ref({
-      name: '',
-      description: '',
-      visibility: ''
-    });
-    const nameError = ref(false);
-
-    // Watch the selected repository ID and fetch details if it changes
-    watch(
-      () => repositoryStore.selectedRepositoryId,
-      (newId) => {
-        if (newId) {
-          repositoryStore.selectRepository(newId);
-        }
-      },
-      { immediate: true }
-    );
-
+    const route = useRoute();
+    const router = useRouter();
     const repository = computed(() => repositoryStore.selectedRepository);
 
-    const startEditing = () => {
-      isEditing.value = true;
-      updatedFields.value = {
-        name: repository.value.name,
-        description: repository.value.description,
-        visibility: repository.value.visibility,
-      };
-      nameError.value = false;
+    const showMenu = ref(false);
+    const isEditing = ref(false);
+    const editableName = ref('');
+    const editableDescription = ref('');
+    const editableVisibility = ref('');
+
+    // Delete modes for commits and branches
+    const isDeleteModeCommits = ref(false);
+    const isDeleteModeBranches = ref(false);
+
+    // Fetch repository details when component mounts or when route changes
+    const fetchRepositoryDetails = async () => {
+      const repositoryId = route.params.id;
+      if (repositoryId) {
+        await repositoryStore.selectRepository(repositoryId);
+      }
     };
 
-    const cancelEditing = () => {
-      isEditing.value = false;
-      nameError.value = false;
+    const toggleMenu = () => {
+      showMenu.value = !showMenu.value;
+    };
+
+    const enterEditMode = () => {
+      isEditing.value = true;
+      showMenu.value = false;
+      editableName.value = repository.value.name;
+      editableDescription.value = repository.value.description;
+      editableVisibility.value = repository.value.visibility;
     };
 
     const saveChanges = async () => {
-      if (!updatedFields.value.name) {
-        nameError.value = true;
-        return;
-      }
-
-      await repositoryStore.updateRepositoryDetails(updatedFields.value);
+      const updatedFields = {
+        name: editableName.value,
+        description: editableDescription.value,
+        visibility: editableVisibility.value,
+      };
+      await repositoryStore.updateRepositoryDetails(updatedFields);
       isEditing.value = false;
     };
+
+    const cancelEdit = () => {
+      isEditing.value = false;
+    };
+
+    const confirmDelete = async () => {
+      showMenu.value = false;
+      if (confirm('Are you sure you want to delete this repository?')) {
+        await repositoryStore.deleteRepository();
+        router.push('/repositories');
+      }
+    };
+
+    const toggleDeleteModeCommits = () => {
+      isDeleteModeCommits.value = !isDeleteModeCommits.value;
+    };
+
+    const toggleDeleteModeBranches = () => {
+      isDeleteModeBranches.value = !isDeleteModeBranches.value;
+    };
+
+    const deleteCommit = async (commitId) => {
+      await repositoryStore.deleteCommit(commitId);
+    };
+
+    const deleteBranch = async (branchId) => {
+      await repositoryStore.deleteBranch(branchId);
+    };
+
+    watch(route, fetchRepositoryDetails, { immediate: true });
+    onMounted(fetchRepositoryDetails);
 
     return {
       repository,
       repositoryStore,
+      showMenu,
+      toggleMenu,
       isEditing,
-      updatedFields,
-      nameError,
-      startEditing,
-      cancelEditing,
+      editableName,
+      editableDescription,
+      editableVisibility,
+      enterEditMode,
       saveChanges,
+      cancelEdit,
+      confirmDelete,
+      isDeleteModeCommits,
+      isDeleteModeBranches,
+      toggleDeleteModeCommits,
+      toggleDeleteModeBranches,
+      deleteCommit,
+      deleteBranch,
     };
   },
 };
 </script>
 
 <style scoped>
-.ai-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-
-.repository-details {
-  display: table;
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-.details-row {
-  display: table-row;
-}
-
-.details-label {
-  display: table-cell;
-  padding: 0.3rem;
-  font-weight: bold;
-  vertical-align: top;
-  text-align: left;
-}
-
-.details-value {
-  display: table-cell;
-  padding: 0.3rem;
-  vertical-align: top;
-  text-align: left;
-}
-
-.details-value input,
-.details-value textarea,
-.details-value select {
-  width: 100%;
-  padding: 0.2rem;
-  font-size: 0.9rem;
-  box-sizing: border-box;
-}
-
-.input-error {
-  border: 1px solid red;
-}
-
-.error-msg {
-  color: red;
-  font-size: 0.8rem;
-}
-
-.button-group {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.lists-container {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.list-section {
-  flex: 1;
-}
-
-h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-  color: #fff;
-}
-
-.scrollable-container {
-  max-height: 150px;
-  overflow-y: auto;
-  background-color: #424242;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-
-.list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.list-text {
-  flex: 1;
-  text-align: left;
-}
-
-.delete-button {
-  padding: 0.3rem 0.5rem;
-  background-color: #e74c3c;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.delete-button:hover {
-  background-color: #c0392b;
-}
-
-.divider {
-  height: 1px;
-  background-color: #ffffff;
-  margin: 0.5rem 0;
-}
-
-.delete-btn {
-  width: 100%;
-  margin-top: 0.5rem;
-  background-color: #c50000;
-}
-
-.button-group button {
-  font-weight: bold;
-}
-
-.edit-btn {
-  background-color: #ffffff;
-  color: #1e1e1e;
-}
-
-.save-btn {
-  color: #ffffff;
-  background-color: #11d05d;
-}
-
-.cancel-btn {
-  color: #ffffff;
-  background-color: #c0392b;
-  margin-left: 15px;
-}
 </style>

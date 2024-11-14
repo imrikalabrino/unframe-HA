@@ -1,120 +1,181 @@
 <template>
-  <div class="ai-container">
-    <div class="left-container">
-      <div class="response-box">
-        <h2 v-if="!aiResponse && !loading">Ask the AI a question about this repository</h2>
-        <p v-if="loading">Thinking...</p>
-        <p v-else-if="aiResponse">{{ aiResponse }}</p>
+  <div
+    class="flex flex-col h-full w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4"
+  >
+    <!-- Chat History -->
+    <div ref="chatContainer" class="flex-1 overflow-y-auto pb-4">
+      <!-- If Conversation History is Empty -->
+      <div
+        v-if="conversationHistory.length === 0"
+        class="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400"
+      >
+        <i class="fa-regular fa-comments fa-5x mb-4"></i>
+        <p class="text-lg">Start conversing with an AI model</p>
       </div>
-      <input v-model="question" placeholder="Ask a question..." />
+
+      <div v-else class="flex flex-col space-y-4">
+        <template v-for="(msg, index) in conversationHistory" :key="index">
+          <div :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+            <div
+              :class="[
+                'px-4 py-2 rounded-lg max-w-md break-words',
+                msg.role === 'user'
+                  ? 'bg-blue-100 dark:bg-blue-700 text-gray-800 dark:text-gray-100'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100',
+              ]"
+            >
+              {{ msg.message }}
+            </div>
+          </div>
+        </template>
+
+        <div v-if="loading" class="flex justify-start">
+          <div class="animate-pulse h-10 w-2/3 rounded-md bg-gray-300 dark:bg-gray-600"></div>
+        </div>
+      </div>
     </div>
-    <div class="right-container">
-      <button class="send-button" @click="askAI">></button>
+
+    <!-- Input Box and Send Button -->
+    <div class="flex items-center mt-4 border-t pt-4 border-gray-300 dark:border-gray-600">
+      <input
+        ref="inputRef"
+        v-model="question"
+        placeholder="Ask a question about this repository..."
+        @keydown.enter="askAI"
+        class="flex-1 border rounded-md p-3 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring focus:border-blue-500 dark:focus:border-blue-400"
+      />
+      <button
+        class="ml-2 p-3 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white transition-all duration-300"
+        @click="askAI"
+        :disabled="loading"
+      >
+        <i class="fas fa-paper-plane h-5 w-5"></i>
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, watch, onMounted, nextTick } from 'vue';
+import { useRepositoryStore } from '../stores/repository-store.js';
 import axios from 'axios';
 
 export default {
-  props: {
-    repoId: {
-      type: Number,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      question: '',
-      aiResponse: null,
-      loading: false,
-      error: null,
+  setup() {
+    const repositoryStore = useRepositoryStore();
+    const question = ref('');
+    const conversationHistory = ref([]);
+    const loading = ref(false);
+    const error = ref(null);
+    const inputRef = ref(null);
+    const chatContainer = ref(null);
+
+    const scrollToBottom = () => {
+      const container = chatContainer.value;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
     };
-  },
-  methods: {
-    async askAI() {
-      this.loading = true;
-      this.error = null;
-      this.aiResponse = null;
+
+    const askAI = async () => {
+      if (!question.value || !repositoryStore.selectedRepositoryId) {
+        error.value = 'Missing required information to send the request.';
+        return;
+      }
+
+      loading.value = true;
+      error.value = null;
 
       try {
+        conversationHistory.value.push({ role: 'user', message: question.value });
+
+        question.value = '';
+
+        inputRef.value?.focus();
+
+        await nextTick();
+        scrollToBottom();
+
         const response = await axios.post('http://localhost:3000/ask-ai', {
-          question: this.question,
-          repoId: this.repoId,
+          question:
+            conversationHistory.value[conversationHistory.value.length - 1].message,
+          repoId: repositoryStore.selectedRepositoryId,
         });
-        this.aiResponse = response.data.response;
+
+        conversationHistory.value.push({
+          role: 'assistant',
+          message: response.data.response,
+        });
+
+        await nextTick();
+        scrollToBottom();
       } catch (err) {
-        this.error = 'Failed to get response from AI';
+        error.value = 'Failed to get response from AI';
+        console.error(err);
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
+    };
+
+    const fetchConversationHistory = async () => {
+      if (!repositoryStore.selectedRepositoryId) return;
+
+      loading.value = true;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/ask-ai/history/${repositoryStore.selectedRepositoryId}`
+        );
+        conversationHistory.value = Array.isArray(response.data.history)
+          ? response.data.history
+          : [];
+
+        await nextTick();
+
+        scrollToBottom();
+      } catch (err) {
+        console.error('Failed to fetch conversation history:', err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    watch(
+      () => conversationHistory.value.length,
+      async () => {
+        await nextTick();
+        scrollToBottom();
+      }
+    );
+
+    watch(
+      () => repositoryStore.selectedRepositoryId,
+      (newRepoId) => {
+        if (newRepoId) {
+          fetchConversationHistory();
+        }
+      },
+      { immediate: true }
+    );
+
+    onMounted(() => {
+      if (repositoryStore.selectedRepositoryId) {
+        fetchConversationHistory();
+      }
+    });
+
+    return {
+      question,
+      conversationHistory,
+      loading,
+      error,
+      askAI,
+      inputRef,
+      chatContainer,
+    };
   },
 };
 </script>
 
 <style scoped>
-.ai-container {
-  display: flex;
-  background-color: #1a1a1a;
-  border-radius: 10px;
-  padding: 1rem;
-  width: 100%;
-  max-width: 600px;
-  color: #fff;
-}
-
-.left-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.response-box {
-  background-color: #333;
-  border-radius: 8px;
-  padding: 1rem;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #bbb;
-  font-size: 1rem;
-  text-align: center;
-}
-
-input {
-  background-color: #222;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.5rem;
-  color: #fff;
-  font-size: 1rem;
-}
-
-input::placeholder {
-  color: #777;
-}
-
-.right-container {
-  display: flex;
-  align-items: flex-end;
-  padding-left: 1rem;
-}
-
-.send-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: #28a745;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.send-button:hover {
-  background-color: #218838;
-}
 </style>

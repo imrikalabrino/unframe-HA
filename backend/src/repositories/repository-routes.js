@@ -1,12 +1,23 @@
-const express = require('express');
+import express from 'express';
+import {
+    checkAccessToken,
+    getAllRepositoriesHandler,
+    getRepositoryByIdHandler,
+    updateRepositoryHandler,
+    deleteRepositoryHandler,
+    deleteCommitHandler,
+    deleteBranchHandler
+} from './repository-controller.js';
+
 const router = express.Router();
-const repositoryController = require('./repository-controller');
 
-router.get('/', repositoryController.getAllRepositories);
-router.get('/:id', repositoryController.getRepositoryById);
-router.patch('/:id', repositoryController.updateRepository);
-router.delete('/:id', repositoryController.deleteRepository);
-router.delete('/:id/commits/:commitId', repositoryController.deleteCommit);
-router.delete('/:id/branches/:branchId', repositoryController.deleteBranch);
+router.use(checkAccessToken);
 
-module.exports = router;
+router.get('/', getAllRepositoriesHandler);
+router.get('/:id', getRepositoryByIdHandler);
+router.patch('/:id', updateRepositoryHandler);
+router.delete('/:id', deleteRepositoryHandler);
+router.delete('/:id/commits/:commitId', deleteCommitHandler);
+router.delete('/:id/branches/:branchId', deleteBranchHandler);
+
+export default router;

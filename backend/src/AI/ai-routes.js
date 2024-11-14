@@ -1,7 +1,12 @@
-const express = require('express');
-const aiController = require('./ai-controller');
+import express from 'express';
+import {
+  askAIHandler,
+  getChatHistoryHandler,
+} from './ai-controller.js';
+
 const router = express.Router();
 
-router.post('/', aiController.askAI);
+router.post('/', askAIHandler);
+router.get('/history/:repoId', getChatHistoryHandler);
 
-module.exports = router;
+export default router;

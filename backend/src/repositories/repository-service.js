@@ -1,14 +1,14 @@
-const axios = require('axios');
-const { pool } = require('../config/db');
-const cacheUtil = require('../utils/cache-util');
+import axios from 'axios';
+import { pool } from '../config/db.js';
+import cacheUtil from '../utils/cache-util.js';
 
 /**
  * Schema for validating repository fields before updating the database.
  */
 const repositorySchema = {
-    name: 'string',
-    description: 'string',
-    visibility: 'string'
+  name: 'string',
+  description: 'string',
+  visibility: 'string',
 };
 
 /**
@@ -21,32 +21,32 @@ const repositorySchema = {
  * @returns {Promise<Array<Object>>} - A list of repository objects.
  * @throws {Error} - Throws an error if the GitLab API request fails.
  */
-exports.getRepositories = async (token, limit = 10, page = 1, search = '') => {
-    try {
-        const response = await axios.get('https://gitlab.com/api/v4/projects', {
-            headers: { Authorization: `Bearer ${token}` },
-            params: {
-                visibility: 'public',
-                per_page: limit,
-                page: page,
-                search: search,
-                order_by: 'last_activity_at'
-            },
-        });
+async function getRepositories(token, limit = 10, page = 1, search = '') {
+  try {
+    const response = await axios.get('https://gitlab.com/api/v4/projects', {
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        visibility: 'public',
+        per_page: limit,
+        page,
+        search,
+        order_by: 'last_activity_at',
+      },
+    });
 
-        return response.data.map(repo => ({
-            id: repo.id,
-            name: repo.name,
-            author: repo.namespace ? repo.namespace.name : 'Unknown',
-            last_activity_at: repo.last_activity_at,
-            description: repo.description,
-            avatar_url: repo.avatar_url
-        }));
-    } catch (error) {
-        console.error('Error fetching repositories from GitLab:', error);
-        throw new Error('Failed to fetch repositories');
-    }
-};
+    return response.data.map((repo) => ({
+      id: repo.id,
+      name: repo.name,
+      author: repo.namespace ? repo.namespace.name : 'Unknown',
+      last_activity_at: repo.last_activity_at,
+      description: repo.description,
+      avatar_url: repo.avatar_url,
+    }));
+  } catch (error) {
+    error.message = 'Failed to fetch repositories';
+    throw error;
+  }
+}
 
 /**
  * Updates specific fields of a repository in the database after validating against the schema.
@@ -56,38 +56,40 @@ exports.getRepositories = async (token, limit = 10, page = 1, search = '') => {
  * @returns {Promise<Object>} - The updated repository object.
  * @throws {Error} - Throws an error if field validation or database update fails.
  */
-exports.updateRepository = async (id, fields) => {
-    try {
-        const keys = Object.keys(fields);
-        const values = Object.values(fields);
+async function updateRepository(id, fields) {
+  try {
+    const keys = Object.keys(fields);
+    const values = Object.values(fields);
 
-        keys.forEach((key, index) => {
-            if (!(key in repositorySchema)) {
-                throw new Error(`Invalid field: ${key}`);
-            }
-            if (typeof values[index] !== repositorySchema[key]) {
-                throw new Error(`Invalid type for field ${key}: expected ${repositorySchema[key]}, got ${typeof values[index]}`);
-            }
-        });
+    keys.forEach((key, index) => {
+      if (!(key in repositorySchema)) {
+        throw new Error(`Invalid field: ${key}`);
+      }
+      if (typeof values[index] !== repositorySchema[key]) {
+        throw new Error(
+          `Invalid type for field ${key}: expected ${repositorySchema[key]}, got ${typeof values[index]}`
+        );
+      }
+    });
 
-        const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
-        values.push(id);
+    const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+    values.push(id);
 
-        const query = `
-            UPDATE repositories
-            SET ${setClause}
-            WHERE id = $${values.length}
-            RETURNING *
-        `;
+    const query = `
+      UPDATE repositories
+      SET ${setClause}
+      WHERE id = $${values.length}
+      RETURNING *
+    `;
 
-        const result = await pool.query(query, values);
-        cacheUtil.clear(id);
-        return result.rows[0];
-    } catch (error) {
-        console.error(`Error updating repository with ID ${id}:`, error);
-        throw new Error('Failed to update repository');
-    }
-};
+    const result = await pool.query(query, values);
+    cacheUtil.clear(id);
+    return result.rows[0];
+  } catch (error) {
+    error.message = `Failed to update repository with ID ${id}`;
+    throw error;
+  }
+}
 
 /**
  * Deletes a repository from the database, along with its associated commits and branches.
@@ -96,15 +98,15 @@ exports.updateRepository = async (id, fields) => {
  * @returns {Promise<void>}
  * @throws {Error} - Throws an error if the repository deletion fails.
  */
-exports.deleteRepository = async (id) => {
-    try {
-        await pool.query('DELETE FROM repositories WHERE id = $1', [id]);
-        cacheUtil.clear(id);
-    } catch (error) {
-        console.error(`Error deleting repository with ID ${id}:`, error);
-        throw new Error('Failed to delete repository');
-    }
-};
+async function deleteRepository(id) {
+  try {
+    await pool.query('DELETE FROM repositories WHERE id = $1', [id]);
+    cacheUtil.clear(id);
+  } catch (error) {
+    error.message = `Failed to delete repository with ID ${id}`;
+    throw error;
+  }
+}
 
 /**
  * Deletes a specific commit associated with a repository.
@@ -114,15 +116,15 @@ exports.deleteRepository = async (id) => {
  * @returns {Promise<void>}
  * @throws {Error} - Throws an error if the commit deletion fails.
  */
-exports.deleteCommit = async (repoId, commitId) => {
-    try {
-        await pool.query('DELETE FROM commits WHERE id = $1 AND repository_id = $2', [commitId, repoId]);
-        cacheUtil.clear(repoId);
-    } catch (error) {
-        console.error(`Error deleting commit with ID ${commitId} for repository ${repoId}:`, error);
-        throw new Error('Failed to delete commit');
-    }
-};
+async function deleteCommit(repoId, commitId) {
+  try {
+    await pool.query('DELETE FROM commits WHERE id = $1 AND repository_id = $2', [commitId, repoId]);
+    cacheUtil.clear(repoId);
+  } catch (error) {
+    error.message = `Failed to delete commit with ID ${commitId} for repository ${repoId}`;
+    throw error;
+  }
+}
 
 /**
  * Deletes a specific branch associated with a repository.
@@ -132,15 +134,15 @@ exports.deleteCommit = async (repoId, commitId) => {
  * @returns {Promise<void>}
  * @throws {Error} - Throws an error if the branch deletion fails.
  */
-exports.deleteBranch = async (repoId, branchId) => {
-    try {
-        await pool.query('DELETE FROM branches WHERE id = $1 AND repository_id = $2', [branchId, repoId]);
-        cacheUtil.clear(repoId);
-    } catch (error) {
-        console.error(`Error deleting branch with ID ${branchId} for repository ${repoId}:`, error);
-        throw new Error('Failed to delete branch');
-    }
-};
+async function deleteBranch(repoId, branchId) {
+  try {
+    await pool.query('DELETE FROM branches WHERE id = $1 AND repository_id = $2', [branchId, repoId]);
+    cacheUtil.clear(repoId);
+  } catch (error) {
+    error.message = `Failed to delete branch with ID ${branchId} for repository ${repoId}`;
+    throw error;
+  }
+}
 
 /**
  * Syncs commits and branches from GitLab with the local database for a specific repository.
@@ -149,35 +151,46 @@ exports.deleteBranch = async (repoId, branchId) => {
  * @param {string} token - The GitLab access token.
  * @returns {Promise<void>}
  */
-const syncCommitsAndBranches = async (repoId, token) => {
-    const commitsResponse = await axios.get(`https://gitlab.com/api/v4/projects/${repoId}/repository/commits`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+async function syncCommitsAndBranches(repoId, token) {
+  try {
+    const commitsResponse = await axios.get(
+      `https://gitlab.com/api/v4/projects/${repoId}/repository/commits`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     const commits = commitsResponse.data;
     for (const commit of commits) {
-        await pool.query(
-            `INSERT INTO commits (id, message, author, date, repository_id)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO NOTHING`,
-            [commit.id, commit.message, commit.author_name, commit.created_at, repoId]
-        );
+      await pool.query(
+        `INSERT INTO commits (id, message, author, date, repository_id)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (id) DO NOTHING`,
+        [commit.id, commit.message, commit.author_name, commit.created_at, repoId]
+      );
     }
 
-    const branchesResponse = await axios.get(`https://gitlab.com/api/v4/projects/${repoId}/repository/branches`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+    const branchesResponse = await axios.get(
+      `https://gitlab.com/api/v4/projects/${repoId}/repository/branches`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     const branches = branchesResponse.data;
     for (const branch of branches) {
-        await pool.query(
-            `INSERT INTO branches (id, name, repository_id)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (id) DO NOTHING`,
-            [branch.commit.id, branch.name, repoId]
-        );
+      await pool.query(
+        `INSERT INTO branches (id, name, repository_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO NOTHING`,
+        [branch.commit.id, branch.name, repoId]
+      );
     }
-};
+  } catch (error) {
+    error.message = `Failed to sync commits and branches for repository ${repoId}`;
+    throw error;
+  }
+}
 
 /**
  * Retrieves repository data by ID, pulling from cache or database, with minimal API calls to GitLab.
@@ -188,46 +201,48 @@ const syncCommitsAndBranches = async (repoId, token) => {
  * @returns {Promise<Object>} - The repository object including commits and branches.
  * @throws {Error} - Throws an error if fetching or syncing repository data fails.
  */
-exports.getRepositoryById = async (repoId, lastActivityAt, token) => {
-    try {
-        // We first try the caching mechanism for the sought repository
-        let cachedRepo = cacheUtil.get(repoId);
+async function getRepositoryById(repoId, lastActivityAt, token) {
+  try {
+    // Try to get the repository from the cache
+    let cachedRepo = cacheUtil.get(repoId);
 
-        // If its found, it can be returned. Unless a last activity date is provided, in that case it validates
-        // the date to determine if a request to the db or api is needed.
-        if (cachedRepo && (!lastActivityAt || new Date(cachedRepo.last_activity_at) >= new Date(lastActivityAt))) {
-            return cachedRepo;
-        }
-
-        // If the cached version is not viable, pull from the db
-        const result = await pool.query('SELECT * FROM repositories WHERE id = $1', [repoId]);
-        const dbRepo = result.rows[0];
-
-        // The same date validation occurs on the data from the db, if its present
-        if (dbRepo && (!lastActivityAt || new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt))) {
-            const commits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
-            const branches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
-
-            cachedRepo = {
-                ...dbRepo,
-                commits: commits.rows,
-                branches: branches.rows
-            };
-
-            // Update the cache
-            cacheUtil.set(repoId, cachedRepo);
-            return cachedRepo;
-        }
-
-        // If the repo is not found in the caching system or the db or they are both invalidated (old data
-        // compared to the api) we get the repo from gitlabs api and update the db and cache.
-        return await fetchAndUpdateRepo(repoId, token);
-
-    } catch (error) {
-        console.error(`Error fetching or syncing repository with ID ${repoId}:`, error);
-        throw new Error('Failed to fetch or sync repository');
+    // Validate the cache based on the last activity date
+    if (
+      cachedRepo &&
+      (!lastActivityAt || new Date(cachedRepo.last_activity_at) >= new Date(lastActivityAt))
+    ) {
+      return cachedRepo;
     }
-};
+
+    // Fetch from the database
+    const result = await pool.query('SELECT * FROM repositories WHERE id = $1', [repoId]);
+    const dbRepo = result.rows[0];
+
+    if (
+      dbRepo &&
+      (!lastActivityAt || new Date(dbRepo.last_activity_at) >= new Date(lastActivityAt))
+    ) {
+      const commits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
+      const branches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
+
+      cachedRepo = {
+        ...dbRepo,
+        commits: commits.rows,
+        branches: branches.rows,
+      };
+
+      // Update the cache
+      cacheUtil.set(repoId, cachedRepo);
+      return cachedRepo;
+    }
+
+    // Fetch and update repository from GitLab API
+    return await fetchAndUpdateRepo(repoId, token);
+  } catch (error) {
+    error.message = `Failed to fetch or sync repository with ID ${repoId}`;
+    throw error;
+  }
+}
 
 /**
  * Fetches repository data from GitLab, updates the local database, and caches the result.
@@ -236,48 +251,85 @@ exports.getRepositoryById = async (repoId, lastActivityAt, token) => {
  * @param {string} token - The GitLab access token.
  * @returns {Promise<Object>} - The repository object including commits and branches.
  */
-const fetchAndUpdateRepo = async (repoId, token) => {
+async function fetchAndUpdateRepo(repoId, token) {
+  try {
     const repoResponse = await axios.get(`https://gitlab.com/api/v4/projects/${repoId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const repoData = repoResponse.data;
 
     await pool.query(
-        `INSERT INTO repositories (id, name, description, author, last_activity_at, visibility)
-         VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO repositories (
+          id, name, description, author, last_activity_at, visibility,
+          topics, default_branch, license_name, avatar_url, readme_url
+        )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          ON CONFLICT (id) DO UPDATE SET
              name = EXCLUDED.name,
              description = EXCLUDED.description,
              author = EXCLUDED.author,
              last_activity_at = EXCLUDED.last_activity_at,
-             visibility = EXCLUDED.visibility`,
-        [
-            repoData.id,
-            repoData.name,
-            repoData.description,
-            repoData.namespace?.name || 'Unknown',
-            repoData.last_activity_at,
-            repoData.visibility
-        ]
+             visibility = EXCLUDED.visibility,
+             topics = EXCLUDED.topics,
+             default_branch = EXCLUDED.default_branch,
+             license_name = EXCLUDED.license_name,
+             avatar_url = EXCLUDED.avatar_url,
+             readme_url = EXCLUDED.readme_url`,
+      [
+        repoData.id,
+        repoData.name,
+        repoData.description,
+        repoData.namespace?.name || 'Unknown',
+        repoData.last_activity_at,
+        repoData.visibility,
+        JSON.stringify(repoData.topics),
+        repoData.default_branch,
+        repoData.license?.name || 'N/A',
+        repoData.avatar_url,
+        repoData.readme_url,
+      ]
     );
 
     await syncCommitsAndBranches(repoId, token);
 
-    const updatedCommits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [repoId]);
-    const updatedBranches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [repoId]);
+    const updatedCommits = await pool.query('SELECT * FROM commits WHERE repository_id = $1', [
+      repoId,
+    ]);
+    const updatedBranches = await pool.query('SELECT * FROM branches WHERE repository_id = $1', [
+      repoId,
+    ]);
 
     const updatedRepo = {
-        id: repoData.id,
-        name: repoData.name,
-        description: repoData.description,
-        author: repoData.namespace?.name || 'Unknown',
-        last_activity_at: repoData.last_activity_at,
-        visibility: repoData.visibility,
-        commits: updatedCommits.rows,
-        branches: updatedBranches.rows
+      id: repoData.id,
+      name: repoData.name,
+      description: repoData.description,
+      author: repoData.namespace?.name || 'Unknown',
+      last_activity_at: repoData.last_activity_at,
+      visibility: repoData.visibility,
+      topics: repoData.topics,
+      default_branch: repoData.default_branch,
+      license_name: repoData.license?.name || 'N/A',
+      avatar_url: repoData.avatar_url,
+      readme_url: repoData.readme_url,
+      commits: updatedCommits.rows,
+      branches: updatedBranches.rows,
     };
 
+    // Update the cache
     cacheUtil.set(repoId, updatedRepo);
     return updatedRepo;
+  } catch (error) {
+    error.message = `Failed to fetch and update repository with ID ${repoId}`;
+    throw error;
+  }
+}
+
+export default {
+  getRepositories,
+  updateRepository,
+  deleteRepository,
+  deleteCommit,
+  deleteBranch,
+  getRepositoryById,
 };

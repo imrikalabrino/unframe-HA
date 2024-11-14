@@ -1,15 +1,10 @@
-const fs = require('fs');
-const path = require('path');
 
-const logFilePath = path.join(__dirname, '../logs/requests.log');
-
-fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
-
-function logger(req, res, next) {
-    const logMessage = `[${new Date().toISOString()}] ${req.method} ${req.url}`;
-    console.log(logMessage);
-
+export default function logger(req, res, next) {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const logMessage = `[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`;
+        console.log(logMessage);
+    });
     next();
 }
-
-module.exports = logger;

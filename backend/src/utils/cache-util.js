@@ -1,6 +1,4 @@
-// In-memory cache object to store key-value pairs with expiration times
 const cache = {};
-// Cache expiration time in milliseconds (5 minutes)
 const EXPIRATION_TIME = 300000;
 
 /**
@@ -46,4 +44,8 @@ const clear = (key) => {
     delete cache[key];
 };
 
-module.exports = { set, get, clear };
+export default {
+    set,
+    get,
+    clear
+};

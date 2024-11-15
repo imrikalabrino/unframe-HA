@@ -55,13 +55,13 @@ This project was designed based on the latest project meeting, where we agreed o
   GITLAB_CLIENT_ID=<Your GitLab Client ID>
   GITLAB_CLIENT_SECRET=<Your GitLab Client Secret>
   GITLAB_REDIRECT_URI=http://localhost:3000/auth/gitlab/callback
-  OPENAI_API_KEY=<Your OpenAI API Key>
+  OPENAI_API_KEY= Leave this empty!
   DB_HOST=<Your Database Host>
   DB_USER=<Your Database User>
   DB_PASSWORD=<Your Database Password>
   DB_DATABASE=unframe
   DB_PORT=5432
-  SESSION_SECRET=<Your Session Secret>
+  SESSION_SECRET=<Your Session Secret> - Can be any string
   ```
 
 - Start the backend server:
